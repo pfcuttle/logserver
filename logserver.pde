@@ -3,10 +3,15 @@
 #include <Ethernet.h>
 
 
-#define HEADERS "\
-HTTP/1.0 200 OK\r\n\
-Content-Type: text/html; charset=utf-8\r\n\
-\r"
+#define HEADERS \
+"HTTP/1.0 200 OK\r\n" \
+"Content-Type: text/html; charset=utf-8\r\n" \
+"\r"
+
+#define FOUND \
+"HTTP/1.0 302 Found\r\n" \
+"Location: http://192.168.50.142/\r\n" \
+"\r"
 
 #define PAGE_1 \
 "<!DOCTYPE html>\r\n" \
@@ -41,6 +46,7 @@ Content-Type: text/html; charset=utf-8\r\n\
 "</html>\r"
 
 #define LOGSIZE 10
+#define LINESIZE 255
 
 
 byte mac[] = {0x00, 0x1B, 0x77, 0x8D, 0x20, 0xCA};
@@ -54,8 +60,13 @@ volatile static unsigned int hours = 0;
 Server server(80);
 
 
+/* Pretty messages */
+char pretty[LOGSIZE][LINESIZE];
+unsigned int p_index = 0;
+
+
 /*
- * Called each second to update seconds count.
+ * Called each second to update uptime.
  */
 void timer_cb(void) {
     secs++;
@@ -72,16 +83,13 @@ void timer_cb(void) {
 }
 
 
-// Pretty messages
-char pretty[LOGSIZE][255] = {"Demo"};
-unsigned int p_index = 0;
-
-
 void setup() {
     Serial.begin(9600);
 
     Ethernet.begin(mac, ip);
     server.begin();
+
+    memset(*pretty, LOGSIZE * LINESIZE, '\0');
 
     MsTimer2::set(1000, timer_cb);
     MsTimer2::start();
@@ -92,12 +100,14 @@ void loop() {
     Client client = server.available();
     
     bool has_equal = false;
-    char line[255];
+    char line[LINESIZE];
     unsigned int index = 0;
     unsigned int i = 0;
 
     if (client) {
         while (client.available()) {
+            /* Parse request */
+
             char c = client.read();
             Serial.print(c);
 
@@ -122,6 +132,10 @@ void loop() {
             Serial.println(msg);
             Serial.println("----");
 
+            /*
+             * Augment string to compensate for urldecode last character
+             * bug.
+             */
             for (i = 0; msg[i] != '\0'; ++i)
                 ;
             msg[i] = ' ';
@@ -129,36 +143,38 @@ void loop() {
 
             /* Prettify */
             if (p_index < LOGSIZE) {
-                urldecode(pretty[p_index++], 255, msg);
+                urldecode(pretty[p_index++], LINESIZE, msg);
             } else {
                 for (i = 1; i < LOGSIZE; ++i) {
-                    strncpy(pretty[i-1], pretty[i], 255);
+                    strncpy(pretty[i-1], pretty[i], LINESIZE);
                 }
-                urldecode(pretty[LOGSIZE-1], 255, msg);
+                urldecode(pretty[LOGSIZE-1], LINESIZE, msg);
             }
 
+            /* Redirect to clear GET params */
+            server.println(FOUND);
+        } else {
+            /* Print whole page */
+
+            server.println(HEADERS);
+
+            server.println(PAGE_1);
+            server.print(hours);
+            server.print(" heures, ");
+            server.print(mins);
+            server.print(" minutes et ");
+            server.print(secs);
+            server.print(" secondes");
+            server.println(PAGE_2);
+
+            for (i = 0; i < p_index; ++i) {
+                server.print("<li>");
+                server.print(pretty[i]);
+                server.println("</li>\r");
+            }
+
+            server.println(PAGE_3);
         }
-
-        /* Print whole page */
-
-        server.println(HEADERS);
-
-        server.println(PAGE_1);
-        server.print(hours);
-        server.print(" heures, ");
-        server.print(mins);
-        server.print(" minutes et ");
-        server.print(secs);
-        server.print(" secondes");
-        server.println(PAGE_2);
-
-        for (i = 0; i < p_index; ++i) {
-            server.print("<li>");
-            server.print(pretty[i]);
-            server.println("</li>\r");
-        }
-
-        server.println(PAGE_3);
 
         delay(1);
         client.stop();
