@@ -40,6 +40,8 @@ Content-Type: text/html; charset=utf-8\r\n\
 "    </body>\r\n" \
 "</html>\r"
 
+#define LOGSIZE 10
+
 
 byte mac[] = {0x00, 0x1B, 0x77, 0x8D, 0x20, 0xCA};
 byte ip[] = {192, 168, 50, 142};
@@ -70,8 +72,9 @@ void timer_cb(void) {
 }
 
 
-// Pretty message
-char pretty[255] = "Demo";
+// Pretty messages
+char pretty[LOGSIZE][255] = {"Demo"};
+unsigned int p_index = 0;
 
 
 void setup() {
@@ -125,7 +128,15 @@ void loop() {
             msg[i+1] = '\0';
 
             /* Prettify */
-            urldecode(pretty, 255, msg);
+            if (p_index < LOGSIZE) {
+                urldecode(pretty[p_index++], 255, msg);
+            } else {
+                for (i = 1; i < LOGSIZE; ++i) {
+                    strncpy(pretty[i-1], pretty[i], 255);
+                }
+                urldecode(pretty[LOGSIZE-1], 255, msg);
+            }
+
         }
 
         /* Print whole page */
@@ -141,9 +152,11 @@ void loop() {
         server.print(" secondes");
         server.println(PAGE_2);
 
-        server.print("<li>");
-        server.print(pretty);
-        server.println("</li>\r");
+        for (i = 0; i < p_index; ++i) {
+            server.print("<li>");
+            server.print(pretty[i]);
+            server.println("</li>\r");
+        }
 
         server.println(PAGE_3);
 
