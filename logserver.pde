@@ -6,47 +6,58 @@
 #define HEADERS \
 "HTTP/1.0 200 OK\r\n" \
 "Content-Type: text/html; charset=utf-8\r\n" \
-"\r"
+"\r\n"
 
 #define FOUND \
 "HTTP/1.0 302 Found\r\n" \
 "Location: http://192.168.50.142/\r\n" \
-"\r"
+"\r\n"
+
+#define NOT_FOUND \
+"HTTP/1.0 404 Not Found\r\n" \
+"Content-type: text/html\r\n" \
+"\r\n" \
+"<h1>404 &emdash; Not Found</h1>\r\n" \
+"\r\n"
 
 #define PAGE_1 \
-"<!DOCTYPE html>\r\n" \
-"<html>\r\n" \
-"    <head>\r\n" \
-"        <title>Bonjourduino!</title>\r\n" \
-"    </head>\r\n" \
+"<!DOCTYPE html>" \
+"<html>" \
+"    <head>" \
+"        <title>Bonjourduino!</title>" \
+"    </head>" \
 "    <style type=\"text/css\">\r\n" \
-"        body {background-color: navy; color: white; font-family: sans-serif; text-align: center;}\r\n" \
+"        body {margin: 2em auto; width: 80em; background-color: #112; color: white; font-family: sans-serif; text-align: center;}\r\n" \
+"        h1 {margin: 1em 0; padding: 1em 0;}\r\n" \
 "        a {border-bottom: dotted 1px orange; color: orange; text-decoration: none;}\r\n" \
-"        ul {margin: 1em; padding: 1em; border: solid 1px white;}\r\n" \
+"        ul {margin: 1em 0; padding: 1em;}\r\n" \
+"        .rounded {border: solid 1px white; background-color: #222; boder-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; -o-border-radius: 4px;}\r\n" \
 "    </style>\r\n" \
-"    <body>\r\n" \
-"        <h1>Bonjour</h1>\r\n" \
+"    <body>" \
+"        <h1 class=\"rounded\">Bonjour</h1>" \
 "        <p>Cette page est sur un" \
 "            <a href=\"http://www.seeedstudio.com/depot/seeeduino-mega-p-717.html?cPath=132\">Seeeduino Mega</a>, " \
 "            avec un <a href=\"http://www.seeedstudio.com/depot/wiznet-ethernet-shield-w5100-p-518.html?cPath=132_134\">Wiznet Ethernet Shield</a>." \
-"        </p>\r\n" \
+"        </p>" \
 "        <p>Le board a été initialisé il y a: <strong>"
 
 #define PAGE_2 \
-"</strong>.</p>\r\n" \
-"        <ul>\r\n"
+"</strong>.</p>" \
+"        <ul class=\"rounded\">"
 
 #define PAGE_3 \
-"        </ul>\r\n" \
-"        <form action=\"http://192.168.50.142\" method=\"GET\">\r\n" \
-"            <input type=\"text\" name=\"msg\" maxsize=\"200\" />\r\n" \
-"            <input type=\"submit\" value=\"Poster!\" />\r\n" \
-"        </form>\r\n" \
-"    </body>\r\n" \
-"</html>\r"
+"        </ul>" \
+"        <form action=\"http://192.168.50.142\" method=\"GET\">" \
+"            <input type=\"text\" name=\"msg\" maxsize=\"200\" />" \
+"            <input type=\"submit\" value=\"Poster!\" />" \
+"        </form>" \
+"    </body>" \
+"</html>"
 
 #define LOGSIZE 10
 #define LINESIZE 255
+
+#define pgm_println(x) ServerPrintln_P(PSTR(x))
 
 
 byte mac[] = {0x00, 0x1B, 0x77, 0x8D, 0x20, 0xCA};
@@ -83,6 +94,22 @@ void timer_cb(void) {
 }
 
 
+/*
+ * Print a flash stored string
+ *
+ * Inspired by `SdFatUtil::SerialPrintln_P'
+ */
+void ServerPrintln_P(PGM_P str) {
+    uint8_t c;
+
+    for (c = 0; (c = pgm_read_byte(str)); ++str) {
+        server.print(c);
+    }
+
+    server.println();
+}
+
+
 void setup() {
     Serial.begin(9600);
 
@@ -109,7 +136,6 @@ void loop() {
             /* Parse request */
 
             char c = client.read();
-            Serial.print(c);
 
             line[index] = c;
             index++;
@@ -123,8 +149,35 @@ void loop() {
             }
         }
 
-        if (has_equal) {
+        line[index] = '\0';
+
+        if (strstr(line, "GET / ")) {
+
+            /* Print index page */
+
+            pgm_println(HEADERS);
+
+            pgm_println(PAGE_1);
+            server.print(hours);
+            server.print(" heures, ");
+            server.print(mins);
+            server.print(" minutes et ");
+            server.print(secs);
+            server.print(" secondes");
+            pgm_println(PAGE_2);
+
+            for (i = 0; i < p_index; ++i) {
+                server.print("<li>");
+                server.print(pretty[i]);
+                server.println("</li>\r");
+            }
+
+            pgm_println(PAGE_3);
+
+        } else if (has_equal) {
+
             /* Get submitted message */
+
             char *msg = strtok(line, " ");
             msg = strtok(NULL, "=");
             msg = strtok(NULL, " ");
@@ -153,27 +206,12 @@ void loop() {
 
             /* Redirect to clear GET params */
             server.println(FOUND);
+
         } else {
-            /* Print whole page */
 
-            server.println(HEADERS);
+            /* Default to not found */
 
-            server.println(PAGE_1);
-            server.print(hours);
-            server.print(" heures, ");
-            server.print(mins);
-            server.print(" minutes et ");
-            server.print(secs);
-            server.print(" secondes");
-            server.println(PAGE_2);
-
-            for (i = 0; i < p_index; ++i) {
-                server.print("<li>");
-                server.print(pretty[i]);
-                server.println("</li>\r");
-            }
-
-            server.println(PAGE_3);
+            server.println(NOT_FOUND);
         }
 
         delay(1);
