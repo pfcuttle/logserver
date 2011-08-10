@@ -35,7 +35,7 @@
 "        .rounded {border: solid 1px white; background-color: #222; boder-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; -o-border-radius: 4px;}\r\n" \
 "    </style>\r\n" \
 "    <body>" \
-"        <h1 class=\"rounded\">logserver</h1>" \
+"        <h1 class=\"rounded\"><img src=\"face.png\" /> logserver</h1>" \
 "        <p>Cette page est sur un" \
 "            <a href=\"http://www.seeedstudio.com/depot/seeeduino-mega-p-717.html?cPath=132\">Seeeduino Mega</a>, " \
 "            avec un <a href=\"http://www.seeedstudio.com/depot/wiznet-ethernet-shield-w5100-p-518.html?cPath=132_134\">Wiznet Ethernet Shield</a>." \
@@ -154,6 +154,9 @@ void loop() {
 
         line[index] = '\0';
 
+        Serial.print(">>>Request: ");
+        Serial.println(line);
+
         if (strstr(line, "GET / ")) {
 
             /* Print index page */
@@ -209,6 +212,11 @@ void loop() {
 
             /* Redirect to clear GET params */
             server.println(FOUND);
+        } else if (strstr(line, "GET /face.png")) {
+
+            /* Serve logo */
+
+            file_serve("face.png");
 
         } else {
 

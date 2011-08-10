@@ -23,7 +23,7 @@ def main():
     with open(sys.argv[3], 'wb') as out_file:
         out_data = '#define {0}_LENGTH {1}\n\n'.format(
                 array.upper(), len(in_data))
-        out_data += ' '.join(['PGM_P', array, '= {\n'])
+        out_data += ' '.join(['PGM_P', array + '[]', '= {\n'])
         out_data += ', '.join('{:#04x}'.format(x) for x in in_data)
         out_data += '\n};\n'
 
