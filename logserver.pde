@@ -24,17 +24,18 @@
 "<!DOCTYPE html>" \
 "<html>" \
 "    <head>" \
-"        <title>Bonjourduino!</title>" \
+"        <title>logserver</title>" \
 "    </head>" \
 "    <style type=\"text/css\">\r\n" \
 "        body {margin: 2em auto; width: 80em; background-color: #112; color: white; font-family: sans-serif; text-align: center;}\r\n" \
 "        h1 {margin: 1em 0; padding: 1em 0;}\r\n" \
 "        a {border-bottom: dotted 1px orange; color: orange; text-decoration: none;}\r\n" \
 "        ul {margin: 1em 0; padding: 1em;}\r\n" \
+"        form {margin: 1em 0; padding: 1em;}\r\n" \
 "        .rounded {border: solid 1px white; background-color: #222; boder-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; -o-border-radius: 4px;}\r\n" \
 "    </style>\r\n" \
 "    <body>" \
-"        <h1 class=\"rounded\">Bonjour</h1>" \
+"        <h1 class=\"rounded\">logserver</h1>" \
 "        <p>Cette page est sur un" \
 "            <a href=\"http://www.seeedstudio.com/depot/seeeduino-mega-p-717.html?cPath=132\">Seeeduino Mega</a>, " \
 "            avec un <a href=\"http://www.seeedstudio.com/depot/wiznet-ethernet-shield-w5100-p-518.html?cPath=132_134\">Wiznet Ethernet Shield</a>." \
@@ -43,14 +44,16 @@
 
 #define PAGE_2 \
 "</strong>.</p>" \
-"        <ul class=\"rounded\">"
+"        <div class=\"rounded\">" \
+"            <ul>"
 
 #define PAGE_3 \
-"        </ul>" \
-"        <form action=\"http://192.168.50.142\" method=\"GET\">" \
-"            <input type=\"text\" name=\"msg\" maxsize=\"200\" />" \
-"            <input type=\"submit\" value=\"Poster!\" />" \
-"        </form>" \
+"            </ul>" \
+"            <form action=\"http://192.168.50.142\" method=\"GET\">" \
+"                <input type=\"text\" name=\"msg\" maxsize=\"200\" />" \
+"                <input type=\"submit\" value=\"Poster!\" />" \
+"            </form>" \
+"        </div>" \
 "    </body>" \
 "</html>"
 
