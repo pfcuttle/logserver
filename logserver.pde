@@ -30,7 +30,7 @@
 "        body {margin: 2em auto; width: 80em; background-color: #112; color: white; font-family: sans-serif; text-align: center;}\r\n" \
 "        h1 {margin: 1em 0; padding: 1em 0;}\r\n" \
 "        a {border-bottom: dotted 1px orange; color: orange; text-decoration: none;}\r\n" \
-"        ul {margin: 1em 0; padding: 1em;}\r\n" \
+"        ul {margin: 1em 0; padding: 1em; list-style-type: none;}\r\n" \
 "        form {margin: 1em 0; padding: 1em;}\r\n" \
 "        .rounded {border: solid 1px white; background-color: #222; boder-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; -o-border-radius: 4px;}\r\n" \
 "    </style>\r\n" \
@@ -60,7 +60,7 @@
 #define LOGSIZE 10
 #define LINESIZE 255
 
-#define pgm_println(x) ServerPrintln_P(PSTR(x))
+#define pgm_println(c, x) ClientPrintln_P(c, PSTR(x))
 
 
 byte mac[] = {0x00, 0x1B, 0x77, 0x8D, 0x20, 0xCA};
@@ -102,14 +102,14 @@ void timer_cb(void) {
  *
  * Inspired by `SdFatUtil::SerialPrintln_P'
  */
-void ServerPrintln_P(PGM_P str) {
+void ClientPrintln_P(Client client, PGM_P str) {
     uint8_t c;
 
     for (c = 0; (c = pgm_read_byte(str)); ++str) {
-        server.print(c);
+        client.print(c);
     }
 
-    server.println();
+    client.println();
 }
 
 
@@ -154,31 +154,37 @@ void loop() {
 
         line[index] = '\0';
 
-        Serial.print(">>>Request: ");
+        Serial.print(">>> Request: ");
         Serial.println(line);
 
         if (strstr(line, "GET / ")) {
 
             /* Print index page */
 
-            pgm_println(HEADERS);
+            pgm_println(client, HEADERS);
 
-            pgm_println(PAGE_1);
-            server.print(hours);
-            server.print(" heures, ");
-            server.print(mins);
-            server.print(" minutes et ");
-            server.print(secs);
-            server.print(" secondes");
-            pgm_println(PAGE_2);
+            pgm_println(client, PAGE_1);
+            client.print(hours);
+            client.print(" heures, ");
+            client.print(mins);
+            client.print(" minutes et ");
+            client.print(secs);
+            client.print(" secondes");
+            pgm_println(client, PAGE_2);
 
             for (i = 0; i < p_index; ++i) {
-                server.print("<li>");
-                server.print(pretty[i]);
-                server.println("</li>\r");
+                client.print("<li>");
+                client.print(pretty[i]);
+                client.println("</li>\r");
             }
 
-            pgm_println(PAGE_3);
+            pgm_println(client, PAGE_3);
+
+        } else if (strstr(line, "GET /?msg= ")) {
+
+            /* Empty message */
+
+            client.println(FOUND);
 
         } else if (has_equal) {
 
@@ -211,18 +217,19 @@ void loop() {
             }
 
             /* Redirect to clear GET params */
-            server.println(FOUND);
+            client.println(FOUND);
+
         } else if (strstr(line, "GET /face.png")) {
 
             /* Serve logo */
 
-            file_serve("face.png");
+            file_serve(client, "face.png");
 
         } else {
 
             /* Default to not found */
 
-            server.println(NOT_FOUND);
+            client.println(NOT_FOUND);
         }
 
         delay(1);

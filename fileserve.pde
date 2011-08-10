@@ -353,22 +353,22 @@ const prog_char face[] = {
 };
 
 
-void file_serve(const char *file) {
+void file_serve(Client client, const char *file) {
     uint8_t c = 0;
     unsigned int i = 0;
 
     if (!strcmp(file, "face.png")) {
-        server.println("HTTP/1.0 200 OK");
-        server.println("Content-type: image/png");
-        server.print("Content-length: ");
-        server.println(FACE_LENGTH, DEC);
-        server.println();
+        client.println("HTTP/1.0 200 OK");
+        client.println("Content-type: image/png");
+        client.print("Content-length: ");
+        client.println(FACE_LENGTH, DEC);
+        client.println();
 
         for (i = 0; i < FACE_LENGTH; ++i) {
             c = face[i];
-            server.write(c);
+            client.write(c);
         }
 
-        server.println();
+        client.println();
     }
 }
